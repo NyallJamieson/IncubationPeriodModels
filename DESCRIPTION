@@ -1,0 +1,17 @@
+Package: IncubationPeriodModels
+Type: Package
+Title: Burr Distributions and a Derived Burr-like Distribution
+Version: 0.1.0
+Authors@R: c(person("Nyall","Jamieson", email="nyall.jamieson@austin.utexas.edu", role=c("aut","cre")), person("Sam","Abbott", role="aut"))
+Description: Implements density, distribution, quantile, and random generation
+    functions for Burr Type III, Burr Type X, Burr Type XII, and a derived
+    Burr-like distribution.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    stats
+Suggests:
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
