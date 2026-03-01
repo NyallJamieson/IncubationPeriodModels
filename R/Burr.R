@@ -397,3 +397,229 @@ rburrNEW <- function(n, a, b, T) {
   if (length(n) != 1 || n < 0) stop("n must be a nonnegative integer.", call. = FALSE)
   qburrNEW(stats::runif(n), a = a, b = b, T = T)
 }
+
+
+
+# -----------------------------
+# Moments (mean / variance)
+# -----------------------------
+
+# Internal: mean from survival function E[X] = ∫_0^∞ (1 - F(x)) dx
+.mean_from_survival <- function(pfun, ..., rel.tol = 1e-10, abs.tol = 0,
+                                subdivisions = 2000, stop.on.error = FALSE) {
+  args <- list(...)
+  force(args)
+
+  integrand <- function(x) {
+    1 - do.call(pfun, c(list(q = x, lower.tail = TRUE, log.p = FALSE), args))
+  }
+
+  res <- tryCatch(
+    stats::integrate(integrand, lower = 0, upper = Inf,
+                     rel.tol = rel.tol, abs.tol = abs.tol,
+                     subdivisions = subdivisions,
+                     stop.on.error = stop.on.error),
+    error = function(e) e
+  )
+
+  if (inherits(res, "error") || !is.finite(res$value)) return(NA_real_)
+  as.numeric(res$value)
+}
+
+# Internal: E[X^r] from log-density using x = exp(t), dx = exp(t) dt
+.moment_from_logdens <- function(logdfun, r, ..., rel.tol = 1e-10, abs.tol = 0,
+                                 subdivisions = 4000, stop.on.error = FALSE) {
+  stopifnot(length(r) == 1, is.finite(r))
+  args <- list(...)
+  force(args)
+
+  integrand <- function(t) {
+    x <- exp(t)
+    logd <- do.call(logdfun, c(list(x = x, log = TRUE), args))
+    exp(r * t + logd + t)
+  }
+
+  res <- tryCatch(
+    stats::integrate(integrand, lower = -Inf, upper = Inf,
+                     rel.tol = rel.tol, abs.tol = abs.tol,
+                     subdivisions = subdivisions,
+                     stop.on.error = stop.on.error),
+    error = function(e) e
+  )
+
+  if (inherits(res, "error") || !is.finite(res$value)) return(NA_real_)
+  as.numeric(res$value)
+}
+
+# Internal: variance from log-density moments
+.var_from_logdens <- function(logdfun, ..., rel.tol = 1e-10) {
+  m1 <- .moment_from_logdens(logdfun, r = 1, ..., rel.tol = rel.tol)
+  if (is.na(m1)) {
+    warning("Variance could not be computed (E[X] integration failed).", call. = FALSE)
+    return(NA_real_)
+  }
+  if (!is.finite(m1)) return(Inf)
+
+  m2 <- .moment_from_logdens(logdfun, r = 2, ..., rel.tol = rel.tol)
+  if (is.na(m2)) {
+    warning("Variance could not be computed (E[X^2] integration failed).", call. = FALSE)
+    return(NA_real_)
+  }
+  if (!is.finite(m2)) return(Inf)
+
+  v <- m2 - m1^2
+  if (is.finite(v) && v < 0) v <- 0  # guard against tiny negative from numerical error
+  v
+}
+
+# -----------------------------
+# Burr Type III: mean / variance (numeric)
+# -----------------------------
+
+#' Mean of the Burr type III distribution
+#'
+#' Computes the mean of the Burr type III distribution on \eqn{x>0}.
+#' The mean is computed numerically from the survival function:
+#' \deqn{E[X] = \int_0^\infty (1 - F(x))\,dx.}
+#'
+#' @inheritParams burr3
+#' @param rel.tol Relative tolerance passed to \code{\link[stats:integrate]{integrate}}.
+#' @return A numeric value (may be \code{Inf} or \code{NA} if not finite / not computable).
+#' @export
+meanburr3 <- function(c, k, s, rel.tol = 1e-10) {
+  .check_pos(c = c, k = k, s = s)
+  m <- .mean_from_survival(pburr3, c = c, k = k, s = s, rel.tol = rel.tol)
+  if (is.na(m)) {
+    warning("Mean could not be computed (integration failed).", call. = FALSE)
+    return(NA_real_)
+  }
+  m
+}
+
+#' Variance of the Burr type III distribution
+#'
+#' Computes the variance of the Burr type III distribution on \eqn{x>0}.
+#' The variance is computed numerically from moments of the density.
+#'
+#' @inheritParams burr3
+#' @param rel.tol Relative tolerance passed to \code{\link[stats:integrate]{integrate}}.
+#' @return A numeric value (may be \code{Inf} or \code{NA} if not finite / not computable).
+#' @export
+varburr3 <- function(c, k, s, rel.tol = 1e-10) {
+  .check_pos(c = c, k = k, s = s)
+  .var_from_logdens(dburr3, c = c, k = k, s = s, rel.tol = rel.tol)
+}
+
+# -----------------------------
+# Burr Type X: mean / variance (numeric)
+# -----------------------------
+
+#' Mean of the Burr type X distribution
+#'
+#' Computes the mean of the Burr type X distribution on \eqn{x>0}.
+#' The mean is computed numerically from the survival function.
+#'
+#' @inheritParams burr10
+#' @param rel.tol Relative tolerance passed to \code{\link[stats:integrate]{integrate}}.
+#' @return A numeric value (may be \code{Inf} or \code{NA} if not finite / not computable).
+#' @export
+meanburr10 <- function(c, k, rel.tol = 1e-10) {
+  .check_pos(c = c, k = k)
+  m <- .mean_from_survival(pburr10, c = c, k = k, rel.tol = rel.tol)
+  if (is.na(m)) {
+    warning("Mean could not be computed (integration failed).", call. = FALSE)
+    return(NA_real_)
+  }
+  m
+}
+
+#' Variance of the Burr type X distribution
+#'
+#' Computes the variance of the Burr type X distribution on \eqn{x>0}.
+#' The variance is computed numerically from moments of the density.
+#'
+#' @inheritParams burr10
+#' @param rel.tol Relative tolerance passed to \code{\link[stats:integrate]{integrate}}.
+#' @return A numeric value (may be \code{Inf} or \code{NA} if not finite / not computable).
+#' @export
+varburr10 <- function(c, k, rel.tol = 1e-10) {
+  .check_pos(c = c, k = k)
+  .var_from_logdens(dburr10, c = c, k = k, rel.tol = rel.tol)
+}
+
+# -----------------------------
+# Burr Type XII: mean / variance (analytic)
+# -----------------------------
+
+#' Mean of the Burr type XII distribution
+#'
+#' Mean for the Burr type XII distribution (this parameterization requires \code{k > 1}).
+#' The mean exists only if \code{k > 1 + 1/c}.
+#'
+#' @inheritParams burr12
+#' @return A numeric value (may be \code{Inf} if the mean does not exist).
+#' @export
+meanburr12 <- function(c, k, s) {
+  .check_pos(c = c, s = s)
+  if (any(k <= 1)) stop("k must be > 1 for this parameterization.", call. = FALSE)
+  if (any(k <= 1 + 1 / c)) return(Inf)
+
+  s * (k - 1) * base::beta(k - 1 - 1 / c, 1 + 1 / c)
+}
+
+#' Variance of the Burr type XII distribution
+#'
+#' Variance for the Burr type XII distribution (this parameterization requires \code{k > 1}).
+#' The variance exists only if \code{k > 1 + 2/c}.
+#'
+#' @inheritParams burr12
+#' @return A numeric value (may be \code{Inf} if the variance does not exist).
+#' @export
+varburr12 <- function(c, k, s) {
+  .check_pos(c = c, s = s)
+  if (any(k <= 1)) stop("k must be > 1 for this parameterization.", call. = FALSE)
+  if (any(k <= 1 + 1 / c)) return(Inf)  # mean infinite
+  if (any(k <= 1 + 2 / c)) return(Inf)  # variance infinite
+
+  m1 <- s * (k - 1) * base::beta(k - 1 - 1 / c, 1 + 1 / c)
+  m2 <- s^2 * (k - 1) * base::beta(k - 1 - 2 / c, 1 + 2 / c)
+  v <- m2 - m1^2
+  if (is.finite(v) && v < 0) v <- 0
+  v
+}
+
+# -----------------------------
+# Derived distribution (NEW): mean / variance (numeric)
+# -----------------------------
+
+#' Mean of the derived Burr-like distribution
+#'
+#' Computes the mean numerically from the survival function:
+#' \deqn{E[X] = \int_0^\infty (1 - F(x))\,dx.}
+#'
+#' @inheritParams burrNEW
+#' @param rel.tol Relative tolerance passed to \code{\link[stats:integrate]{integrate}}.
+#' @return A numeric value (may be \code{Inf} or \code{NA} if not finite / not computable).
+#' @export
+meanburrNEW <- function(a, b, T, rel.tol = 1e-10) {
+  .check_pos(a = a, b = b, T = T)
+  m <- .mean_from_survival(pburrNEW, a = a, b = b, T = T, rel.tol = rel.tol)
+  if (is.na(m)) {
+    warning("Mean could not be computed (integration failed).", call. = FALSE)
+    return(NA_real_)
+  }
+  m
+}
+
+#' Variance of the derived Burr-like distribution
+#'
+#' Computes the variance numerically from moments of the density.
+#'
+#' @inheritParams burrNEW
+#' @param rel.tol Relative tolerance passed to \code{\link[stats:integrate]{integrate}}.
+#' @return A numeric value (may be \code{Inf} or \code{NA} if not finite / not computable).
+#' @export
+varburrNEW <- function(a, b, T, rel.tol = 1e-10) {
+  .check_pos(a = a, b = b, T = T)
+  .var_from_logdens(dburrNEW, a = a, b = b, T = T, rel.tol = rel.tol)
+}
