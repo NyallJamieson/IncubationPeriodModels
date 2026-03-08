@@ -1,11 +1,31 @@
 Package: IncubationPeriodModels
 Type: Package
-Title: Burr Distributions and a Derived Burr-like Distribution
+Title: Burr Distribution Models for Incubation Period and Delay Analysis
 Version: 0.1.1
-Authors@R: c(person("Nyall","Jamieson", email="nyall.jamieson@austin.utexas.edu", role=c("aut","cre")), person("Sam","Abbott", role="aut"))
+Authors@R: 
+    c(
+      person(
+        given = "Nyall",
+        family = "Jamieson",
+        email = "nyall.jamieson@austin.utexas.edu",
+        role = c("aut", "cre")
+      ),
+      person(
+        given = "Sam",
+        family = "Abbott",
+        role = "aut"
+      )
+    )
 Description: Implements density, distribution, quantile, and random generation
     functions for Burr Type III, Burr Type X, Burr Type XII, and a derived
-    Burr-like distribution.
+    Burr-like distribution. These distributions provide flexible parametric
+    models for positive-valued event times and can represent a wide range of
+    tail behaviours and hazard shapes. They are particularly useful for
+    modelling incubation periods and other epidemiological delay
+    distributions where skewness and heavy tails are common. The package
+    provides a consistent interface for working with these distributions in
+    statistical workflows involving simulation, likelihood-based inference,
+    and delay distribution modelling.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -13,7 +33,11 @@ RoxygenNote: 7.3.3
 Imports:
     stats
 Suggests:
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
 Config/testthat/edition: 3
-URL: https://github.com/NyallJamieson/IncubationPeriodModels
+URL: https://github.com/NyallJamieson/IncubationPeriodModels,
+    https://nyalljamieson.github.io/IncubationPeriodModels
 BugReports: https://github.com/NyallJamieson/IncubationPeriodModels/issues
+VignetteBuilder: knitr

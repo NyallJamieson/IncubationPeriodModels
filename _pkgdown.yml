@@ -1,0 +1,36 @@
+url: https://nyalljamieson.github.io/IncubationPeriodModels/
+
+template:
+  bootstrap: 5
+
+home:
+  title: IncubationPeriodModels
+  description: Burr-family distributions for modelling incubation periods and epidemiological delay distributions
+
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [github]
+
+reference:
+  - title: Distribution functions
+    contents:
+      - starts_with("dburr")
+      - starts_with("pburr")
+      - starts_with("qburr")
+      - starts_with("rburr")
+
+  - title: Summary statistics
+    contents:
+      - starts_with("meanburr")
+      - starts_with("varburr")
+
+  - title: Utilities
+    contents:
+      - burrdist
+
+articles:
+  - title: Vignettes
+    navbar: ~
+    contents:
+      - introduction
