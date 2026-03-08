@@ -1,0 +1,18 @@
+
+cff-version: 1.2.0
+title: IncubationPeriodModels
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - family-names: Jamieson
+    given-names: Nyall
+    orcid: https://orcid.org/0009-0004-1491-6885
+  - family-names: Abbott
+    given-names: Sam
+    orcid: https://orcid.org/0000-0001-8057-8037
+repository-code: https://github.com/NyallJamieson/IncubationPeriodModels
+url: https://nyalljamieson.github.io/IncubationPeriodModels
+license: MIT
+version: 0.1.1
+date-released: 2026-03-08
+
